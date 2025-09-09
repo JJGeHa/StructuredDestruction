@@ -3,6 +3,7 @@
 This repo contains a simple demo web app:
 - Backend: FastAPI with a small SQLite-backed Ideas API
 - Frontend: React (CRA) with Ant Design UI
+  - Tools: Cover letter generator, PDF generator, Email preview/send
 
 The app demonstrates a simple workflow: submit an idea (title + description), the backend computes a lightweight priority score based on keywords, and the UI lists ideas with delete actions.
 
@@ -79,6 +80,22 @@ Optional enhancements for production:
 - Add Azure AD auth (Easy Auth) on App Service
 - Use Azure Database for PostgreSQL instead of SQLite if multi-instance
 
+## SMTP and PDF tools
+
+- Email sending uses environment variables (if not set, API returns a preview):
+  - `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_USER`, `SMTP_PASS`, `SMTP_TLS` (true/false), `SMTP_FROM`
+- PDF generation uses `reportlab` (installed via `backend/requirements.txt`). If missing, `/api/tools/pdf-fill` returns 501.
+
+Example Docker run with SMTP envs:
+
+```bash
+docker compose up --build -d
+# or
+docker run --rm -p 8000:8000 \
+  -e SMTP_HOST=smtp.example.com -e SMTP_USER=user -e SMTP_PASS=pass \
+  react-fastapi-demo:local
+```
+
 ## Project Structure
 
 ```
@@ -101,3 +118,14 @@ docker-compose.yml    # Local container dev
 - CRA 5 + React 19 can be finicky. If dev server fails, pin React to 18.x (`npm i react@18 react-dom@18`) and restart.
 - CORS issues in dev: ensure backend runs on 8000 and frontend on 3000; endpoints in code use explicit `http://localhost:8000`.
 - Database resets: delete `backend/data.db` to start fresh.
+## Docker Dev (hot reload)
+
+Run separate dev containers for live reload on save:
+
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+- Frontend dev server: http://localhost:3000
+- Backend API: http://localhost:8000
+- The frontend dev server proxies `/api` to the backend using `frontend/src/setupProxy.js` and the env var `API_PROXY_TARGET` (set to `http://backend:8000` in compose).

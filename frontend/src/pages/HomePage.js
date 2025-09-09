@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Col, Row, List, Typography, Input, Table, Button, Space, Tag, message } from 'antd';
 import { API_BASE } from '../api';
+import { Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 // Use shared API base
 
 function HomePage() {
   const [overview, setOverview] = useState({ my_clients: [], awaiting_clients: [], stats: {} });
+  const [myAssignees, setMyAssignees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
@@ -26,6 +28,15 @@ function HomePage() {
 
   useEffect(() => {
     fetchOverview();
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/home/my-assignees?owner=demo`);
+        const data = await res.json();
+        setMyAssignees(data);
+      } catch (e) {
+        // ignore for now
+      }
+    })();
   }, []);
 
   const onSearch = async (value) => {
@@ -66,11 +77,14 @@ function HomePage() {
       {
         title: 'Action',
         key: 'action',
-        width: 160,
+        width: 260,
         render: (_, record) => (
-          <Button type="primary" disabled={record.owner === 'demo'} onClick={() => onAssign(record.id)}>
-            {record.owner === 'demo' ? 'Assigned' : 'Add to My Clients'}
-          </Button>
+          <Space>
+            <Button type="primary" disabled={record.owner === 'demo'} onClick={() => onAssign(record.id)}>
+              {record.owner === 'demo' ? 'Assigned' : 'Add to My Clients'}
+            </Button>
+            <Link to="/assignees/1">Open Workpaper</Link>
+          </Space>
         ),
       },
     ],
@@ -81,11 +95,15 @@ function HomePage() {
     <Space direction="vertical" size="large" style={{ display: 'flex' }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <Card loading={loading} title={<Title level={4} style={{ margin: 0 }}>My Clients</Title>}>
+          <Card loading={loading} title={<Title level={4} style={{ margin: 0 }}>My Assignees</Title>}>
             <List
-              dataSource={overview.my_clients}
-              renderItem={(item) => <List.Item>{item.name}</List.Item>}
-              locale={{ emptyText: 'No clients yet' }}
+              dataSource={myAssignees}
+              renderItem={(item) => (
+                <List.Item>
+                  <Link to={`/assignees/${item.id}`}>{item.name} - {item.client_name}</Link>
+                </List.Item>
+              )}
+              locale={{ emptyText: 'No assignees yet' }}
             />
           </Card>
         </Col>
